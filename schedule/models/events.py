@@ -166,22 +166,20 @@ class Event(models.Model):
         if timezone.is_naive(self.start):
             dtstart = self.start
         else:
-            dtstart = absolute_add(self.start, tzinfo).replace(tzinfo=None)
+            dtstart = self.start.replace(tzinfo=None)
 
         if self.end_recurring_period is None:
             until = None
         elif timezone.is_naive(self.end_recurring_period):
             until = self.end_recurring_period
         else:
-            until = absolute_add(
-                self.end_recurring_period.astimezone(tzinfo), tzinfo
-            ).replace(tzinfo=None)
+            until = self.end_recurring_period.astimezone(tzinfo).replace(tzinfo=None)
 
         return rrule.rrule(frequency, dtstart=dtstart, until=until, **params)
 
     def _create_occurrence(self, start, end=None):
         if end is None:
-            end = start + (self.end - self.start)
+            end = absolute_add(start, (self.end - self.start))
         return Occurrence(
             event=self, start=start, end=end, original_start=start, original_end=end
         )
@@ -196,7 +194,7 @@ class Event(models.Model):
         rule = self.get_rrule_object(tzinfo)
         if rule:
             next_occurrence = rule.after(
-                absolute_add(date, tzinfo).replace(tzinfo=None), inc=True
+                date.replace(tzinfo=None), inc=True
             )
             next_occurrence = next_occurrence.replace(tzinfo=tzinfo)
         else:
@@ -231,7 +229,7 @@ class Event(models.Model):
             start_rule = self.get_rrule_object(tzinfo)
             start = start.replace(tzinfo=None)
             if timezone.is_aware(end):
-                end = absolute_add(end, tzinfo).replace(tzinfo=None)
+                end = end.replace(tzinfo=None)
 
             o_starts = []
 
